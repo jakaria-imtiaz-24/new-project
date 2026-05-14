@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>নামাজের সময়সূচি - লাইভ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Bengali:wght@400;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --card2: #1c2128;
+    --border: #30363d;
+    --green: #2ea043;
+    --green-glow: rgba(46,160,67,0.3);
+    --gold: #d4a847;
+    --gold-light: #f0c060;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --white: #ffffff;
+    --accent: #58a6ff;
+    --danger: #f85149;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #050507;
+    color: var(--text);
+    font-family: 'Noto Sans Bengali', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(46,160,67,0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(212,168,71,0.06) 0%, transparent 50%);
+  }
+
+  /* Floating Mobile Frame */
+  .app {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 32px;
+    padding: 24px 16px;
+    box-shadow: 
+      0 20px 50px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(255,255,255,0.05),
+      inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  /* Scrollbar */
+  .app::-webkit-scrollbar { width: 4px; }
+  .app::-webkit-scrollbar-track { background: transparent; }
+  .app::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0 4px;
+  }
+
+  .alarm-btn {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .alarm-btn:hover { border-color: var(--gold); background: var(--card); }
+
+  .title-area { flex: 1; }
+  .title-area h1 {
+    font-family: 'Noto Serif Bengali', serif;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .live-badge {
+    font-size: 10px;
+    background: var(--green);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: sans-serif;
+    letter-spacing: 1px;
+    box-shadow: 0 0 8px var(--green-glow);
+  }
+
+  .main-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .main-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(212,168,71,0.08), transparent 70%);
+    border-radius: 50%;
+  }
+
+   .prayer-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; 
+    gap: 15px;
+  }
+
+
+  .current-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+    box-shadow: 0 0 6px var(--green);
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.8); }
+  }
+
+   .current-prayer-name {
+    font-family: 'Noto Serif Bengali', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 0; 
+    line-height: 1.2; 
+  }
+
+  .current-time {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .current-time span {
+    color: var(--green);
+    font-size: 11px;
+    background: rgba(46,160,67,0.12);
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-left: 4px;
+  }
+
+  .remaining {
+    font-size: 13px;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+.circle-timer {
+    position: relative;
+    width: 110px; 
+    height: 140px;
+    flex-shrink: 0;
+  }
+  .circle-timer svg {
+    transform: rotate(-90deg);
+    width: 120px; height: 110px;
+  }
+
+  .circle-bg { fill: none; stroke: var(--border); stroke-width: 5; }
+  .circle-progress {
+    fill: none;
+    stroke: var(--gold);
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-dasharray: 314;
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear;
+    filter: drop-shadow(0 0 4px rgba(212,168,71,0.5));
+  }
+
+  .circle-dot {
+    fill: var(--gold-light);
+    filter: drop-shadow(0 0 3px var(--gold));
+  }
+
+  .timer-text {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .timer-text .t-label { font-size: 10px; color: var(--muted); display: block; margin-bottom: 2px; }
+  .timer-text .t-time { font-size: 15px; font-weight: 700; color: var(--white); letter-spacing: 1px; }
+  .timer-text .t-sub { font-size: 10px; color: var(--muted); }
+
+  .sehri-iftar {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .si-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .si-icon { font-size: 16px; }
+  .si-label { color: var(--muted); }
+  .si-time { color: var(--text); font-weight: 500; margin-left: 4px; }
+
+  /* Sunrise Sunset Special Card */
+  .sun-card {
+    background: linear-gradient(135deg, rgba(212,168,71,0.1), rgba(238,90,36,0.05));
+    border: 1px solid rgba(212,168,71,0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .sun-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4a847' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    opacity: 0.3;
+    z-index: 0;
+  }
+  .sun-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    z-index: 1;
+    position: relative;
+  }
+  .sun-icon { font-size: 26px; filter: drop-shadow(0 0 8px rgba(212,168,71,0.4)); }
+  .sun-label { font-size: 12px; color: var(--gold); font-weight: 500; }
+  .sun-time { font-size: 18px; color: var(--white); font-weight: 700; letter-spacing: 0.5px; }
+  .sun-v-divider { width: 1px; height: 40px; background: rgba(212,168,71,0.3); z-index: 1; }
+
+  /* Prayer Times Row */
+  .prayer-times-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px 10px;
+  }
+
+  .prayer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .prayer-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .p-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: all 0.3s;
+  }
+  .p-dot.active { background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+  .p-dot.passed { background: var(--green); }
+  .p-dot.upcoming { background: var(--border); }
+
+  .p-name { font-size: 13px; color: var(--text); font-weight: 500; }
+  .p-time { font-size: 11px; color: var(--muted); }
+
+  .p-divider { width: 1px; height: 40px; background: var(--border); flex-shrink: 0; }
+
+  /* Tracker */
+  .tracker-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 18px 16px;
+  }
+
+  .tracker-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 14px;
+  }
+
+  .tracker-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .tracker-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: 50px;
+    border: 1.5px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-family: 'Noto Sans Bengali', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .tracker-btn.done {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+    box-shadow: 0 0 12px var(--green-glow);
+  }
+
+  .tracker-btn.missed {
+    border-color: rgba(248,81,73,0.4);
+    color: var(--danger);
+  }
+
+  .tracker-btn.upcoming-t {
+    border-color: var(--border);
+    color: var(--muted);
+  }
+
+  .tracker-btn .t-icon { font-size: 14px; }
+
+  .tracker-btn:hover:not(.done) {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(212,168,71,0.05);
+  }
+
+  /* Ayat Slider */
+  .ayat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ayat-card::before {
+    content: '"';
+    position: absolute;
+    top: -10px; left: 12px;
+    font-size: 80px;
+    color: var(--gold);
+    opacity: 0.15;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+
+  .ayat-label {
+    font-size: 12px;
+    color: var(--gold);
+    font-weight: 600;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .ayat-arabic {
+    font-family: 'Noto Serif Bengali', serif;
+    font-size: 22px;
+    text-align: right;
+    direction: rtl;
+    color: var(--white);
+    line-height: 1.8;
+    margin-bottom: 14px;
+    min-height: 60px;
+    transition: opacity 0.5s;
+  }
+
+  .ayat-bangla {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+    min-height: 50px;
+    transition: opacity 0.5s;
+  }
+
+  .ayat-source {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--gold);
+    opacity: 0.7;
+  }
+
+  .ayat-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 16px;
+  }
+
+  .ayat-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .ayat-dot.active {
+    background: var(--gold);
+    width: 18px;
+    border-radius: 3px;
+    box-shadow: 0 0 6px rgba(212,168,71,0.4);
+  }
+
+  .ayat-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+  }
+
+  .ayat-nav button {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ayat-nav button:hover { border-color: var(--gold); color: var(--gold); }
+
+  .ayat-progress {
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+  .ayat-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+
+  .fade-enter { animation: fadeIn 0.5s ease; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .footer { height: 10px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="alarm-btn">🔔</div>
+    <div class="title-area">
+      <h1>নামাজের সময়সূচি • ঢাকা <span class="live-badge">LIVE</span></h1>
+    </div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="main-card">
+    <div class="prayer-status">
+      <div class="left-info">
+        <div class="current-label">
+          এখন : <strong id="currentPrayerName" style="color:var(--white); margin-left:4px;">লোড হচ্ছে...</strong>
+          <span class="live-dot"></span>
+        </div>
+        <div class="current-prayer-name" id="currentTimeDisplay">--:-- --</div>
+        <div class="current-time"><span id="waqtLabel">ওয়াক্ত চলছে</span></div>
+        <div class="remaining" id="remainingText">গণনা হচ্ছে...</div>
+      </div>
+
+      <!-- Circular Timer -->
+      <div class="circle-timer">
+        <svg viewBox="0 0 110 110">
+          <circle class="circle-bg" cx="55" cy="55" r="50"/>
+          <circle class="circle-progress" id="circleArc" cx="55" cy="55" r="50"/>
+          <circle class="circle-dot" id="circleDot" cx="105" cy="55" r="5"/>
+        </svg>
+        <div class="timer-text">
+          <span class="t-label">সময়</span>
+          <span class="t-time" id="countdownDisplay">--:--:--</span>
+          <span class="t-sub">বাকি</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sehri-iftar">
+      <div class="si-item">
+        <span class="si-icon">🌙</span>
+        <span class="si-label">সেহরি:</span>
+        <span class="si-time" id="sehriTime">--:-- AM</span>
+      </div>
+      <div class="si-item">
+        <span class="si-icon">🌅</span>
+        <span class="si-label">ইফতার:</span>
+        <span class="si-time" id="iftarTime">--:-- PM</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sunrise & Sunset Card -->
+  <div class="sun-card">
+    <div class="sun-item">
+      <div class="sun-icon"></div>
+      <div class="sun-label">সূর্যোদয়</div>
+      <div class="sun-time" id="sunriseTime">--:--</div>
+    </div>
+    <div class="sun-v-divider"></div>
+    <div class="sun-item">
+      <div class="sun-icon"></div>
+      <div class="sun-label">সূর্যাস্ত</div>
+      <div class="sun-time" id="sunsetTime">--:--</div>
+    </div>
+  </div>
+
+  <!-- Prayer Times -->
+  <div class="prayer-times-card">
+    <div class="prayer-row" id="prayerTimesRow"></div>
+  </div>
+
+  <!-- Tracker -->
+  <div class="tracker-card">
+    <div class="tracker-title">নামাজ ট্র্যাকার</div>
+    <div class="tracker-row" id="trackerRow"></div>
+  </div>
+
+  <!-- Ayat Slider -->
+  <div class="ayat-card">
+    <div class="ayat-label">📖 আজকের দোয়া ও আয়াত</div>
+    <div class="ayat-arabic" id="ayatArabic"></div>
+    <div class="ayat-bangla" id="ayatBangla"></div>
+    <div class="ayat-source" id="ayatSource"></div>
+    <div class="ayat-progress"><div class="ayat-progress-bar" id="ayatProgressBar" style="width:0%"></div></div>
+    <div class="ayat-nav">
+      <button onclick="prevAyat()">‹</button>
+      <div class="ayat-dots" id="ayatDots"></div>
+      <button onclick="nextAyat()">›</button>
+    </div>
+  </div>
+
+  <div class="footer"></div>
+</div>
+
+<script>
+// ===== GLOBAL VARIABLES =====
+let PRAYERS = [
+  { key: 'fajr',   name: 'ফজর',   time: '05:00' },
+  { key: 'dhuhr',  name: 'যোহর',  time: '13:30' },
+  { key: 'asr',    name: 'আসর',   time: '16:45' },
+  { key: 'maghrib',name: 'মাগরিব',time: '18:20' },
+  { key: 'isha',   name: 'এশা',   time: '19:45' },
+];
+
+let SUNRISE_TIME = '06:15';
+let SUNSET_TIME = '18:10';
+
+// Tracker state
+let trackerState = JSON.parse(localStorage.getItem('trackerState') || '{}');
+let todayKey = new Date().toDateString();
+if (!trackerState[todayKey]) {
+  trackerState[todayKey] = { fajr: null, dhuhr: null, asr: null, maghrib: null, isha: null };
+}
+
+// ===== ALADHAN API INTEGRATION =====
+async function fetchPrayerTimes() {
+  try {
+    // Method 1 = University of Islamic Sciences, Karachi (Standard for Bangladesh)
+    const response = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Dhaka&country=Bangladesh&method=1');
+    const data = await response.json();
+    const timings = data.data.timings;
+
+    PRAYERS = [
+      { key: 'fajr',   name: 'ফজর',   time: timings.Fajr },
+      { key: 'dhuhr',  name: 'যোহর',  time: timings.Dhuhr },
+      { key: 'asr',    name: 'আসর',   time: timings.Asr },
+      { key: 'maghrib',name: 'মাগরিব',time: timings.Maghrib },
+      { key: 'isha',   name: 'এশা',   time: timings.Isha },
+    ];
+
+    SUNRISE_TIME = timings.Sunrise;
+    SUNSET_TIME = timings.Sunset;
+
+    // Update UI
+    document.getElementById('sunriseTime').textContent = formatTime12(SUNRISE_TIME);
+    document.getElementById('sunsetTime').textContent = formatTime12(SUNSET_TIME);
+    
+    // Sehri & Iftar Updates
+    document.getElementById('sehriTime').textContent = formatTime12(timings.Fajr);
+    document.getElementById('iftarTime').textContent = formatTime12(timings.Maghrib);
+
+    renderPrayerTimesRow();
+    renderTracker();
+    updateMain();
+
+  } catch (error) {
+    console.error("API Error, using default times:", error);
+  }
+}
+
+// ===== UTILITY FUNCTIONS =====
+function toBengaliNum(n) {
+  const bn = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+  return String(n).replace(/[0-9]/g, d => bn[d]);
+}
+
+// Convert "HH:MM" to total minutes
+function timeToMinutes(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function getNowMinutes() {
+  const now = new Date();
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+// Format "HH:MM" to "HH:MM AM/PM" in Bengali
+function formatTime12(timeStr) {
+  if (!timeStr || !timeStr.includes(':')) return '--:--';
+  let [h, m] = timeStr.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${toBengaliNum(h)}:${toBengaliNum(String(m).padStart(2, '0'))} ${period}`;
+}
+
+function getCurrentAndNextPrayer() {
+  const nowMin = getNowMinutes();
+  let current = null, next = null;
+
+  for (let i = 0; i < PRAYERS.length; i++) {
+    const pm = timeToMinutes(PRAYERS[i].time);
+    if (nowMin >= pm) current = i;
+  }
+
+  if (current === null) {
+    next = 0;
+    current = PRAYERS.length - 1; // Past midnight case
+  } else if (current === PRAYERS.length - 1) {
+    next = 0;
+  } else {
+    next = current + 1;
+  }
+
+  return { current, next };
+}
+
+function getSecondsUntilNextPrayer(nextIdx) {
+  const now = new Date();
+  const np = PRAYERS[nextIdx];
+  let target = new Date();
+  target.setHours(...np.time.split(':').map(Number), 0, 0);
+  if (target <= now) target.setDate(target.getDate() + 1);
+  return Math.max(0, Math.floor((target - now) / 1000));
+}
+
+function getTotalPrayerWindowSeconds(currentIdx, nextIdx) {
+  const cMin = timeToMinutes(PRAYERS[currentIdx].time);
+  let nMin = timeToMinutes(PRAYERS[nextIdx].time);
+  if (nMin <= cMin) nMin += 24 * 60;
+  return (nMin - cMin) * 60;
+}
+
+function updateCircle(fraction) {
+  const r = 50;
+  const circumference = 2 * Math.PI * r;
+  const arc = document.getElementById('circleArc');
+  const dot = document.getElementById('circleDot');
+  if (!arc) return;
+  const offset = circumference * (1 - fraction);
+  arc.style.strokeDashoffset = offset;
+
+  const angle = (fraction * 360 - 90) * (Math.PI / 180);
+  const cx = 55 + r * Math.cos(angle);
+  const cy = 55 + r * Math.sin(angle);
+  dot.setAttribute('cx', cx);
+  dot.setAttribute('cy', cy);
+}
+
+// ===== UI RENDER FUNCTIONS =====
+function renderPrayerTimesRow() {
+  const row = document.getElementById('prayerTimesRow');
+  const { current } = getCurrentAndNextPrayer();
+  const nowMin = getNowMinutes();
+
+  row.innerHTML = '';
+  PRAYERS.forEach((p, i) => {
+    const pm = timeToMinutes(p.time);
+    const isPassed = nowMin > pm && i !== current;
+    const isActive = i === current;
+
+    const item = document.createElement('div');
+    item.className = 'prayer-item';
+
+    const dotClass = isActive ? 'active' : isPassed ? 'passed' : 'upcoming';
+    item.innerHTML = `
+      <div class="p-dot ${dotClass}"></div>
+      <div class="p-name" style="color:${isActive ? 'var(--gold)' : 'var(--text)'}">${p.name}</div>
+      <div class="p-time">${formatTime12(p.time)}</div>
+    `;
+    row.appendChild(item);
+
+    if (i < PRAYERS.length - 1) {
+      const div = document.createElement('div');
+      div.className = 'p-divider';
+      row.appendChild(div);
+    }
+  });
+}
+
+function renderTracker() {
+  const row = document.getElementById('trackerRow');
+  const { current } = getCurrentAndNextPrayer();
+  const nowMin = getNowMinutes();
+  const today = trackerState[todayKey];
+
+  row.innerHTML = '';
+  PRAYERS.forEach((p, i) => {
+    const pm = timeToMinutes(p.time);
+    const isPassed = nowMin > pm;
+    const isActive = i === current;
+    const state = today[p.key];
+
+    const btn = document.createElement('button');
+    btn.className = 'tracker-btn';
+
+    if (state === 'done') {
+      btn.classList.add('done');
+      btn.innerHTML = `<span class="t-icon">✓</span>${p.name}`;
+    } else if (isPassed && state !== 'done') {
+      if (isActive) {
+        btn.style.borderColor = 'var(--gold)';
+        btn.style.color = 'var(--gold)';
+        btn.innerHTML = `<span class="t-icon">🟢</span>${p.name}`;
+      } else {
+        btn.classList.add('missed');
+        btn.innerHTML = `<span class="t-icon">⚠</span>${p.name}`;
+      }
+    } else {
+      btn.classList.add('upcoming-t');
+      btn.innerHTML = `<span class="t-icon">○</span>${p.name}`;
+    }
+
+    btn.onclick = () => {
+      today[p.key] = today[p.key] === 'done' ? null : 'done';
+      localStorage.setItem('trackerState', JSON.stringify(trackerState));
+      renderTracker();
+    };
+
+    row.appendChild(btn);
+  });
+}
+
+function updateMain() {
+  const { current, next } = getCurrentAndNextPrayer();
+  const cp = PRAYERS[current];
+  const np = PRAYERS[next];
+
+  document.getElementById('currentPrayerName').textContent = cp.name;
+  
+  const now = new Date();
+  document.getElementById('currentTimeDisplay').textContent = formatTime12(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`);
+  document.getElementById('waqtLabel').textContent = `${np.name} ওয়াক্ত শুরু হবে`;
+
+  const secsLeft = getSecondsUntilNextPrayer(next);
+  const totalSecs = getTotalPrayerWindowSeconds(current, next);
+  const fraction = secsLeft / totalSecs;
+
+  const h = Math.floor(secsLeft / 3600);
+  const m = Math.floor((secsLeft % 3600) / 60);
+  const s = secsLeft % 60;
+
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('countdownDisplay').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+  document.getElementById('remainingText').textContent = `${toBengaliNum(h)} ঘণ্টা ${toBengaliNum(m)} মিনিট বাকি`;
+
+  updateCircle(Math.max(0.02, fraction));
+}
+
+// ===== AYAT SLIDER =====
+const AYATS = [
+  { arabic: 'بِسْمِ اللَّهِ وَالْحَمْدُ لِلَّهِ', bangla: 'ওযুর শুরুতে: বিসমিল্লাহি ওয়াল হামদুলিল্লাহ।', source: '— ওযুর দোয়া' },
+  { arabic: 'رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ', bangla: 'হে আমার রব! আমাকে ক্ষমা করুন এবং আমার তওবা কবুল করুন।', source: '— আবু দাউদ' },
+  { arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَافِيَةَ', bangla: 'হে আল্লাহ! আমি আপনার কাছে সুস্থতা চাই।', source: '— তিরমিযী' },
+  { arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ', bangla: 'আল্লাহর পবিত্রতা ঘোষণা করি এবং তাঁর প্রশংসা করি।', source: '— বুখারী ও মুসলিম' },
+  { arabic: 'لَا إِلَٰهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ', bangla: 'আল্লাহ ছাড়া কোনো ইলাহ নেই, তিনি একক, তাঁর কোনো শরিক নেই।', source: '— মুসলিম' },
+  { arabic: 'اللَّهُمَّ بَارِكْ لَنَا فِيمَا رَزَقْتَنَا', bangla: 'হে আল্লাহ! আপনি আমাদের যা রিজিক দিয়েছেন তাতে বরকত দিন।', source: '— দোয়া' },
+  { arabic: 'أَعُوذُ بِاللَّهِ مِنَ الشَّيْطَانِ الرَّجِيمِ', bangla: 'আমি বিতাড়িত শয়তান থেকে আল্লাহর আশ্রয় প্রার্থনা করছি।', source: '— কুরআন' },
+  { arabic: 'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً', bangla: 'হে আমাদের রব! আমাদের দুনিয়ায় কল্যাণ দাও এবং আখিরাতে কল্যাণ দাও।', source: '— সূরা বাকারা: ২০১' },
+];
+
+let currentAyat = 0;
+let ayatTimer;
+
+function renderAyat(idx, animate) {
+  const a = AYATS[idx];
+  const arabic = document.getElementById('ayatArabic');
+  const bangla = document.getElementById('ayatBangla');
+  const source = document.getElementById('ayatSource');
+  const dots = document.getElementById('ayatDots');
+  const bar = document.getElementById('ayatProgressBar');
+
+  if (animate) {
+    arabic.style.opacity = 0;
+    bangla.style.opacity = 0;
+    setTimeout(() => {
+      arabic.textContent = a.arabic;
+      bangla.textContent = a.bangla;
+      source.textContent = a.source;
+      arabic.style.opacity = 1;
+      bangla.style.opacity = 1;
+      arabic.classList.add('fade-enter');
+      setTimeout(() => arabic.classList.remove('fade-enter'), 600);
+    }, 300);
+  } else {
+    arabic.textContent = a.arabic;
+    bangla.textContent = a.bangla;
+    source.textContent = a.source;
+  }
+
+  dots.innerHTML = '';
+  AYATS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'ayat-dot' + (i === idx ? ' active' : '');
+    d.onclick = () => { currentAyat = i; renderAyat(i, true); resetAyatTimer(); };
+    dots.appendChild(d);
+  });
+
+  bar.style.width = ((idx + 1) / AYATS.length * 100) + '%';
+}
+
+function nextAyat() { currentAyat = (currentAyat + 1) % AYATS.length; renderAyat(currentAyat, true); resetAyatTimer(); }
+function prevAyat() { currentAyat = (currentAyat - 1 + AYATS.length) % AYATS.length; renderAyat(currentAyat, true); resetAyatTimer(); }
+function resetAyatTimer() { clearInterval(ayatTimer); ayatTimer = setInterval(nextAyat, 60000); }
+
+// ===== INITIALIZATION =====
+function init() {
+  fetchPrayerTimes(); // Fetch live times immediately
+  renderAyat(currentAyat, false);
+  resetAyatTimer();
+
+  // Update the timer and check every second
+  setInterval(() => {
+    updateMain();
+    renderPrayerTimesRow();
+    renderTracker();
+  }, 1000);
+
+  // Refresh API data every hour to ensure accuracy
+  setInterval(fetchPrayerTimes, 3600000); 
+}
+
+init();
+</script>
+</body>
+</html>
